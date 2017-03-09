@@ -1,2 +1,2 @@
 #!/bin/sh
-skynet/skynet launchconfig
+skynet/skynet launchconfig.lua

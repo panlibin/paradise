@@ -1,6 +1,8 @@
 gameplay_data_path = "./gameplay/data/?.lua;"
 
 gameplay_lua_path = "./gameplay/?.lua;"
+	.."./gameplay_envconfig/?.lua;"
+	.."./gameplay/lualib/?.lua;"
 
 gameplay_service_path = "./gameplay/?.lua;"
 	.."./gameplay/service/logger/?.lua;"
@@ -18,5 +20,5 @@ lua_path = root.."skynet/lualib/?.lua;"..root.."skynet/lualib/?/init.lua;"..game
 lua_cpath = root.."skynet/luaclib/?.so;".."./gameplay/luaclib/?.so;"
 cpath = root.."skynet/cservice/?.so;"
 lualoader = root.."skynet/lualib/loader.lua"
--- preload = "./examples/preload.lua"	-- run preload.lua before every lua service run
+preload = "./gameplay/preload.lua"	-- run preload.lua before every lua service run
 -- daemon = "./skynet.pid"

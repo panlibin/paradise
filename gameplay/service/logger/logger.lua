@@ -1,15 +1,36 @@
 local skynet = require "skynet"
 require "skynet.manager"
 
-logpath = skynet.getenv("logpath") or ""
-tbLogFile = {}
+local logpath = skynet.getenv("logpath") or ""
+local tbLogFile = {}
+
+local function format_log(address, ...)
+	return string.format("[%s][:%08x]: " .. string.rep("%s", select("#", ...), " "), os.date("%Y-%m-%d %H:%M:%S", math.floor(skynet.time())), address, ...)
+end
+
+local function write_log(address, fileName, ...)
+	if nil == tbLogFile[fileName] then
+		print(format_log(address, string.format("open log file(%s)!", logpath .. "/" .. fileName .. ".log")))
+		tbLogFile[fileName] = io.open(logpath .. "/" .. fileName .. ".log", "a")
+	end
+
+	local file = tbLogFile[fileName]
+	local strlog = format_log(address, ...)
+	if nil ~= file then
+		file:write(strlog .. "\n")
+		file:flush()
+	else
+		print(format_log(address, string.format("open log file(%s) failed!", logpath .. "/" .. fileName .. ".log")))
+	end
+	print(strlog)
+end
 
 skynet.register_protocol {
 	name = "text",
 	id = skynet.PTYPE_TEXT,
 	unpack = skynet.tostring,
-	dispatch = function(_, address, msg)
-		print(string.format("[%s][:%08x]: %s", os.date("%Y-%m-%d %H:%M:%S", math.floor(skynet.time())), address, msg))
+	dispatch = function(_, address, ...)
+		write_log(address, "stderr", ...)
 	end
 }
 
@@ -24,20 +45,10 @@ skynet.register_protocol {
 }
 
 skynet.start(function()
-	skynet.dispatch("lua", function(_, address, fileName, msg)
-		if nil == tbLogFile[fileName] then
-			print(string.format("[%s][:%08x]: open log file(%s)", os.date("%Y-%m-%d %H:%M:%S", math.floor(skynet.time())), address, logpath .. "/" .. fileName .. ".log"))
-			tbLogFile[fileName] = io.open(logpath .. "/" .. fileName .. ".log", "a")
-		end
-		local file = tbLogFile[fileName]
-		local strlog = string.format("[%s][:%08x]: %s", os.date("%Y-%m-%d %H:%M:%S", math.floor(skynet.time())), address, msg)
-		if nil ~= file then
-			file:write(strlog .. "\n")
-			file:flush()
-		else
-			print(string.format("[%s][:%08x]: open log file(%s) failed!", os.date("%Y-%m-%d %H:%M:%S", math.floor(skynet.time())), address, logpath .. "/" .. fileName .. ".log"))
-		end
-		print(strlog)
+	skynet.dispatch("lua", function(_, address, fileName, ...)
+		print(fileName)
+		write_log(address, fileName, ...)
+		skynet.ret()
 	end)
 	skynet.register ".logger"
 end)
