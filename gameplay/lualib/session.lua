@@ -4,6 +4,8 @@ local sproto = require "sproto"
 local sprotoloader = require "sprotoloader"
 local Session = class("Session")
 
+local fn_string_pack = string.pack
+
 function Session:ctor(fd, ip, gate, agent, protoidx)
 	self.nEncodeIdx = 0
 	self.ip = ip
@@ -32,7 +34,7 @@ function Session:packMessage(protoname, args)
 end
 
 function Session:sendMessage(package)
-	socket.write(self.fd, string.pack(">s2", package))
+	socket.write(self.fd, fn_string_pack(">s2", package))
 end
 
 return Session
