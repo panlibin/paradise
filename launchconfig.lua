@@ -1,11 +1,11 @@
 gameplay_data_path = "./gameplay/data/?.lua;"
 
-gameplay_lua_path = "./gameplay/?.lua;"
-	.."./gameplay_envconfig/?.lua;"
+gameplay_lua_path = "./gameplay/envconfig/?.lua;"
 	.."./gameplay/lualib/?.lua;"
+	.."./gameplay/service_logic/?.lua;"
+	.."./gameplay/service_proxy/?.lua;"
 
-gameplay_service_path = "./gameplay/?.lua;"
-	.."./gameplay/service/logger/?.lua;"
+gameplay_service_path = "./gameplay/service/?.lua;"
 
 root = "./"
 thread = 8
@@ -16,7 +16,7 @@ harbor = 0
 start = "main"
 bootstrap = "snlua bootstrap"
 luaservice = root.."skynet/service/?.lua;"..gameplay_service_path
-lua_path = root.."skynet/lualib/?.lua;"..root.."skynet/lualib/?/init.lua;"..gameplay_data_path..gameplay_lua_path
+lua_path = root.."skynet/lualib/?.lua;"..gameplay_data_path..gameplay_lua_path
 lua_cpath = root.."skynet/luaclib/?.so;".."./gameplay/luaclib/?.so;"
 cpath = root.."skynet/cservice/?.so;"
 lualoader = root.."skynet/lualib/loader.lua"

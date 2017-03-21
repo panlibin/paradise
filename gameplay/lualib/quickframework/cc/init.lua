@@ -22,5 +22,25 @@ THE SOFTWARE.
 
 ]]
 
-require("quickframework.functions")
-require("quickframework.cc.init")
+--[[--
+
+初始化 cc 扩展
+
+cc 扩展在 cocos2dx C++ API 和 quick 基本模块的基础上，提供了符合脚本风格的事件接口、组件架构等扩展。
+
+]]
+
+local CURRENT_MODULE_NAME = ...
+
+-- init base classes
+Registry   = import(".Registry")
+GameObject = import(".GameObject")
+
+-- init components
+local components = {
+    "components.behavior.StateMachine",
+    "components.behavior.EventProtocol",
+}
+for _, packageName in ipairs(components) do
+    Registry.add(import("." .. packageName, CURRENT_MODULE_NAME), packageName)
+end
