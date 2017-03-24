@@ -1,2 +1,2 @@
-local ProtoLoaderService = require "protoloader.protoloaderservice"
+local ProtoLoaderService = require("protoloader.protoloaderservice")
 ProtoLoaderService.instance():start()

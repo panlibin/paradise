@@ -1,9 +1,11 @@
-local skynet = require "skynet"
-local netpack = require "netpack"
-local log = require "loggerproxy"
-local gate = require "gateproxy"
+local skynet = require("skynet")
+local netpack = require("netpack")
+local log = require("loggerproxy")
+local gate = require("gateproxy")
 local WatchdogService = class("WatchdogService")
-local AuthSession = require "watchdog.authsession"
+local AuthSession = require("watchdog.authsession")
+
+require("databaseproxy", require("dbconfig").service, 0)
 
 local inst = nil
 function WatchdogService.instance()
@@ -14,14 +16,16 @@ function WatchdogService.instance()
 end
 
 function WatchdogService:ctor()
-	self.CMD = { start = handler(self, self.onCommandStart)
-		, close = handler(self, self.onCommandClose)
+	self.CMD = {
+		start = self.onCommandStart,
+		close = self.onCommandClose,
 	}
-	self.SOCKET = { open = handler(self, self.onSocketOpen)
-		, close = handler(self, self.onSocketClose)
-		, error = handler(self, self.onSocketError)
-		, warning = handler(self, self.onSocketWarning)
-		, data = handler(self, self.onSocketData)
+	self.SOCKET = {
+		open = self.onSocketOpen,
+		close = self.onSocketClose,
+		error = self.onSocketError,
+		warning = self.onSocketWarning,
+		data = self.onSocketData,
 	}
 	self.gate = nil
 	self.session = {}
@@ -39,8 +43,8 @@ end
 
 function WatchdogService:onSocketOpen(fd, addr)
 	log.debug("watchdog", "New client from : " .. addr)
-	self.session[fd] = AuthSession.new(fd, addr, self.gate, nil, LOGIN_PROTOCOL_INDEX)
-	gate.forward(self.gate, fd, fd)
+	self.session[fd] = AuthSession.new(fd, addr, self.gate, LOGIN_PROTOCOL_INDEX)
+	gate.callForward(self.gate, fd, fd)
 	-- skynet.call(self.session[fd], "lua", "start", { gate = self.gate, client = fd, watchdog = skynet.self() })
 end
 
@@ -89,11 +93,11 @@ function WatchdogService:start()
 		skynet.dispatch("lua", function(session, source, cmd, subcmd, ...)
 			if cmd == "socket" then
 				local f = self.SOCKET[subcmd]
-				f(...)
+				f(self, ...)
 				-- socket api don't need return
 			else
 				local f = assert(self.CMD[cmd])
-				skynet.ret(skynet.pack(f(subcmd, ...)))
+				skynet.ret(skynet.pack(f(self, subcmd, ...)))
 			end
 		end)
 

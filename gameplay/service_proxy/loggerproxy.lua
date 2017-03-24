@@ -1,4 +1,4 @@
-local skynet = require "skynet"
+local skynet = require("skynet")
 local log = {}
 local bDebug = DEBUG
 

@@ -1,6 +1,6 @@
-local skynet = require "skynet"
-local sprotoparser = require "sprotoparser"
-local sprotoloader = require "sprotoloader"
+local skynet = require("skynet")
+local sprotoparser = require("sprotoparser")
+local sprotoloader = require("sprotoloader")
 local ProtoLoaderService = class("ProtoLoaderService")
 
 local inst = nil

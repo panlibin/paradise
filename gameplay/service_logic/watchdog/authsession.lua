@@ -1,5 +1,7 @@
-local Session = require "session"
+local Session = require("session")
 local AuthSession = class("AuthSession", Session)
+
+require("databaseproxy", require("dbconfig").player, 1)
 
 function AuthSession:ctor(...)
 	AuthSession.super.ctor(self, ...)

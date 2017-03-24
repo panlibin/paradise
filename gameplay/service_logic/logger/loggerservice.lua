@@ -1,6 +1,14 @@
-local skynet = require "skynet"
-require "skynet.manager"
+local skynet = require("skynet")
+require("skynet.manager")
 local LoggerService = class("LoggerService")
+
+local fnStringFormat = string.format
+local fnStringRep = string.rep
+local fnSelect = select
+local fnOsDate = os.date
+local fnMathFloor = math.floor
+local fnPrint = print
+local fnType = type
 
 local inst = nil
 function LoggerService.instance()
@@ -16,12 +24,12 @@ function LoggerService:ctor()
 end
 
 function LoggerService:formatLog(address, ...)
-	return string.format("[%s][:%08x]: " .. string.rep("%s", select("#", ...), " "), os.date("%Y-%m-%d %H:%M:%S", math.floor(skynet.time())), address, ...)
+	return fnStringFormat("[%s][:%08x]: " .. fnStringRep("%s", fnSelect("#", ...), " "), fnOsDate("%Y-%m-%d %H:%M:%S", fnMathFloor(skynet.time())), address, ...)
 end
 
 function LoggerService:writeLog(address, fileName, ...)
 	if nil == self.mapLogFile[fileName] then
-		print(self:formatLog(address, string.format("open log file(%s)!", self.strLogPath .. "/" .. fileName .. ".log")))
+		fnPrint(self:formatLog(address, fnStringFormat("open log file(%s)!", self.strLogPath .. "/" .. fileName .. ".log")))
 		self.mapLogFile[fileName] = io.open(self.strLogPath .. "/" .. fileName .. ".log", "a")
 	end
 
@@ -31,9 +39,9 @@ function LoggerService:writeLog(address, fileName, ...)
 		file:write(strlog .. "\n")
 		file:flush()
 	else
-		print(self:formatLog(address, string.format("open log file(%s) failed!", self.strLogPath .. "/" .. fileName .. ".log")))
+		fnPrint(self:formatLog(address, fnStringFormat("open log file(%s) failed!", self.strLogPath .. "/" .. fileName .. ".log")))
 	end
-	print(strlog)
+	fnPrint(strlog)
 end
 
 function LoggerService:start()
@@ -52,13 +60,13 @@ function LoggerService:start()
 		unpack = function(...) return ... end,
 		dispatch = function()
 			-- reopen signal
-			print("SIGHUP")
+			fnPrint("SIGHUP")
 		end
 	}
 
 	skynet.start(function()
 		skynet.dispatch("lua", function(_, address, fileName, ...)
-			if type(fileName) == "string" and fileName ~= "" then
+			if fnType(fileName) == "string" and fileName ~= "" then
 				self:writeLog(address, fileName, ...)
 			else
 				self:writeLog(address, "stderr", "invalid file name!")
@@ -66,16 +74,16 @@ function LoggerService:start()
 		end)
 		local file = io.open(self.strLogPath)
 		if nil == file then
-			print(self:formatLog(0, string.format("create log path(%s).", self.strLogPath)))
+			fnPrint(self:formatLog(0, fnStringFormat("create log path(%s).", self.strLogPath)))
 			os.execute("mkdir "..self.strLogPath)
 			file = io.open(self.strLogPath)
 			if nil == file then
-				print(self:formatLog(0, string.format("create log path(%s) failed!", self.strLogPath)))
+				fnPrint(self:formatLog(0, fnStringFormat("create log path(%s) failed!", self.strLogPath)))
 				skynet.exit()
 			end
 		end
 		file:close()
-		skynet.register ".logger"
+		skynet.register(".logger")
 	end)
 end
 

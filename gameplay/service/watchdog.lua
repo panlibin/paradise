@@ -1,2 +1,2 @@
-local WatchdogService = require "watchdog.watchdogservice"
+local WatchdogService = require("watchdog.watchdogservice")
 WatchdogService.instance():start()
