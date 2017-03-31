@@ -12,6 +12,7 @@ end
 
 function AuthSession:processMsgLogin(_, _, msg)
 	self.strAccount = assert(msg.account)
+	self:sendMessage(self:packMessage("MsgLoginRet", {errno = 0}))
 	return true
 end
 

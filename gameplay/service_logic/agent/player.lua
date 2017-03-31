@@ -7,6 +7,7 @@ local Player = class("Player")
 
 local getAccountIdByCharacterId = getAccountIdByCharacterId
 
+local NORET = NORET
 local inst = nil
 function Player.instance()
 	if not inst then
@@ -29,7 +30,10 @@ function Player:ctor()
 		unpack = skynet.unpack,
 		dispatch = function (_, _, uidCharacterId, ...)
 			if self:isCharacterOwner(uidCharacterId) then
-				self.charactermanager:dispatch(uidCharacterId, ...)
+				res = self.charactermanager:dispatch(uidCharacterId, ...)
+				if res ~= NORET then
+					skynet.ret(skynet.pack(res))
+				end
 			end
 		end
 	}
