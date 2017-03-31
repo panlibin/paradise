@@ -2,10 +2,9 @@ local skynet = require("skynet")
 local netpack = require("netpack")
 local log = require("loggerproxy")
 local gate = require("gateproxy")
+local agentmanager = require("agentmanagerproxy")
 local WatchdogService = class("WatchdogService")
 local AuthSession = require("watchdog.authsession")
-
-require("databaseproxy", require("dbconfig").service, 0)
 
 local inst = nil
 function WatchdogService.instance()
@@ -27,25 +26,25 @@ function WatchdogService:ctor()
 		warning = self.onSocketWarning,
 		data = self.onSocketData,
 	}
-	self.gate = nil
-	self.session = {}
+	self.mapSession = {}
 end
 
 function WatchdogService:closeSession(fd)
-	local s = self.session[fd]
-	self.session[fd] = nil
-	if s then
-		skynet.call(self.gate, "lua", "kick", fd)
-		-- disconnect never return
-		skynet.send(s, "lua", "disconnect")
+	if self.mapSession[fd] == nil then
+		agentmanager.sendDisconnect(fd)
+	else
+		self.mapSession[fd] = nil
+		gate.callKick(fd)
 	end
 end
 
 function WatchdogService:onSocketOpen(fd, addr)
 	log.debug("watchdog", "New client from : " .. addr)
-	self.session[fd] = AuthSession.new(fd, addr, self.gate, LOGIN_PROTOCOL_INDEX)
-	gate.callForward(self.gate, fd, fd)
-	-- skynet.call(self.session[fd], "lua", "start", { gate = self.gate, client = fd, watchdog = skynet.self() })
+	local session = AuthSession.new()
+	session:init(fd, addr, LOGIN_PROTOCOL_INDEX, 0, 0)
+	self.mapSession[fd] = session
+
+	gate.callForward(fd, fd)
 end
 
 function WatchdogService:onSocketClose(fd)
@@ -67,11 +66,18 @@ function WatchdogService:onSocketData(fd, msg)
 end
 
 function WatchdogService:onCommandStart(conf)
-	skynet.call(self.gate, "lua", "open" , conf)
+	gate.callOpen(conf)
 end
 
 function WatchdogService:onCommandClose(fd)
 	self:closeSession(fd)
+end
+
+function WatchdogService:acceptSession(strAccount, fd, ip, nEncodeIdx, nDecodeIdx)
+	self.mapSession[fd] = nil
+	local agent = agentmanager.callCreateAgent(strAccount, fd, ip, nEncodeIdx, nDecodeIdx)
+	assert(agent)
+	gate.callForward(fd, 0, agent)
 end
 
 function WatchdogService:start()
@@ -81,10 +87,14 @@ function WatchdogService:start()
 		unpack = function (msg, sz)
 			return msg, sz
 		end,
-		dispatch = function (_, fd, msg, sz)
-			local session = self.session[fd]
+		dispatch = function(_, fd, msg, sz)
+			local session = self.mapSession[fd]
 			if session then
-				session:processMsgLogin(session:unpackMessage(msg, sz))
+				if session:processMsgLogin(session:unpackMessage(msg, sz)) then
+					self:acceptSession(session.strAccount, session.fd, session.ip, session.nEncodeIdx, session.nDecodeIdx)
+				else
+					self:closeSession(session.fd)
+				end
 			end
 		end
 	}
@@ -101,7 +111,9 @@ function WatchdogService:start()
 			end
 		end)
 
-		self.gate = skynet.newservice("gate")
+		skynet.uniqueservice("gate")
+		gate.initServiceAddr()
+		agentmanager.initServiceAddr()
 	end)
 end
 

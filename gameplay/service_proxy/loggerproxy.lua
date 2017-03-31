@@ -1,13 +1,13 @@
 local skynet = require("skynet")
 local log = {}
-local bDebug = DEBUG
+local nDebug = DEBUG
 
 function log.info(fileName, ...)
 	skynet.send(".logger", "lua", fileName, ...)
 end
 
 function log.debug(fileName, ...)
-	if bDebug then
+	if nDebug > 0 then
 		skynet.send(".logger", "lua", fileName, ...)
 	end
 end

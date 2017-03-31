@@ -7,7 +7,14 @@ local DatabaseService = class("DatabaseService")
 
 local MAX_RECONNECT_TIMES = 3
 local inst = nil
-local NORET = {}
+local NORET = NORET
+
+local DatabaseState = {
+	Disconnected = 0,
+	Connecting = 1,
+	Working = 2,
+	Recovering = 3,
+}
 
 function DatabaseService.instance()
 	if not inst then
@@ -28,15 +35,16 @@ function DatabaseService:ctor()
 	self.db = nil
 	self.nReconnectTimes = 0
 	self.conf = nil
-	self.isConnecting = false
+	self.state = DatabaseState.Disconnected
 	self.arrWaitingOperation = {}
 end
 
 function DatabaseService:connect(conf)
-	if self.isConnecting == true or conf == nil then
+	if self.state == DatabaseState.Connecting or conf == nil then
 		return false
 	end
-	self.isConnecting = true
+	local lastState = self.state
+	self.state = DatabaseState.Connecting
 	self.conf = conf
 	local ok
 	ok, self.db = pcall(mysql.connect, conf)
@@ -49,18 +57,17 @@ function DatabaseService:connect(conf)
 	end
 
 	if ok then
-		local nAmount = #self.arrWaitingOperation
-		for _, v in ipairs(self.arrWaitingOperation) do
-			v(true)
-		end
-		if nAmount ~= #self.arrWaitingOperation then
-			skynet.abort()
-			return false
-		end
-
-		self.arrWaitingOperation = {}
 		self.nReconnectTimes = 0
-		self.isConnecting = false
+		if next(self.arrWaitingOperation) == nil then
+			self.state = DatabaseState.Working
+		else
+			self.state = DatabaseState.Recovering
+			if lastState ~= DatabaseState.Recovering then
+				skynet.fork(function()
+					self:recover()
+				end)
+			end
+		end
 		return true
 	else
 		skynet.abort()
@@ -75,32 +82,47 @@ function DatabaseService:disconnect()
 	end
 end
 
-function DatabaseService:execute(sql)
-	local ok, res
-	if self.db ~= nil then
+function DatabaseService:execute(sql, isRecover)
+	local ok = false
+	local res = nil
+	if self.db ~= nil and (self.state == DatabaseState.Working or isRecover) then
 		ok, res = pcall(self.db.query, self.db, sql)
 		if ok then
-			if res.err then
+			if res.errno then
 				log.info("database", dump(res))
+				if res.errno == 1053 then
+					ok = false
+				end
 			end
 		end
 	end
 	if not ok then
-		table.insert(self.arrWaitingOperation, function()
-			self:execute(sql)
-		end)
-		self:connect(self.conf)
+		if not isRecover then
+			table.insert(self.arrWaitingOperation, {
+				fun = self.execute,
+				sql = sql,
+				ret = nil
+			})
+			self:connect(self.conf)
+		else
+			return NORET
+		end
 	end
 end
 
-function DatabaseService:query(sql)
-	local ok, res
-	if self.db ~= nil then
+function DatabaseService:query(sql, isRecover)
+	local ok = false
+	local res = nil
+	if self.db ~= nil and (self.state == DatabaseState.Working or isRecover) then
 		ok, res = pcall(self.db.query, self.db, sql)
 		if ok then
-			if res.err then
+			if res.errno then
 				log.info("database", dump(res))
-				return nil
+				if res.errno == 1053 then
+					ok = false
+				else
+					return nil
+				end
 			elseif res.mulitresultset then
 				return res[1]
 			else
@@ -109,13 +131,35 @@ function DatabaseService:query(sql)
 		end
 	end
 	if not ok then
-		local closure = skynet.response(function()
-			return skynet.pack(self:query(sql))
-		end)
-		table.insert(self.arrWaitingOperation, closure)
-		self:connect(self.conf)
+		if not isRecover then
+			table.insert(self.arrWaitingOperation, {
+				fun = self.query,
+				sql = sql,
+				ret = skynet.response()
+			})
+			self:connect(self.conf)
+		end
 		return NORET
 	end
+end
+
+function DatabaseService:recover()
+	while next(self.arrWaitingOperation) ~= nil do
+		local mapRecoverContex = self.arrWaitingOperation[1]
+		res = mapRecoverContex.fun(self, mapRecoverContex.sql, true)
+		if res ~= NORET then
+			local f = mapRecoverContex.ret
+			if f then
+				f(true, res)
+			end
+			table.remove(self.arrWaitingOperation, 1)
+		else
+			if not self:connect(self.conf) then
+				return
+			end
+		end
+	end
+	self.state = DatabaseState.Working
 end
 
 function DatabaseService:start(serviceName)

@@ -22,5 +22,6 @@ THE SOFTWARE.
 
 ]]
 
+require("quickframework.debug")
 require("quickframework.functions")
 require("quickframework.cc.init")

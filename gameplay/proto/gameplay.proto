@@ -1,0 +1,34 @@
+.package {
+	type 0 : integer
+	session 1 : integer
+}
+
+MsgLoginReq 1 {
+	request {
+		account 0  : string
+	}
+}
+
+MsgLoginRet 2 {
+	request {
+		errno 0 : integer
+	}
+}
+
+MsgCharacterListSyn 3 {
+	request {
+		account 0  : integer
+	}
+}
+
+MsgEnterWorldReq 4 {
+	request {
+		errno 0 : integer
+	}
+}
+
+MsgEnterWorldRet 5 {
+	request {
+		errno 0 : integer
+	}
+}

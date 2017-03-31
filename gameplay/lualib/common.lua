@@ -1,3 +1,5 @@
+NORET = {}
+
 function dump(obj)
     local getIndent, quoteStr, wrapKey, wrapVal, dumpObj
     getIndent = function(level)
@@ -40,4 +42,9 @@ function dump(obj)
         return table.concat(tokens, "\n")
     end
     return dumpObj(obj, 0)
+end
+
+local fnMathFloor = math.floor
+function getAccountIdByCharacterId(uidCharacterId)
+    return fnMathFloor(uidCharacterId / 100)
 end

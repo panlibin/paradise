@@ -29,8 +29,9 @@ skynet.start(function()
 		database.callConnect(serviceDbConf.conf)
 	end
 
-	-- skynet.newservice("simpledb")
-	local watchdog = skynet.newservice("watchdog")
+	local watchdog = skynet.uniqueservice("watchdog")
+	skynet.uniqueservice("agentmanager")
+
 	skynet.call(watchdog, "lua", "start", {
 		port = 8888,
 		maxclient = max_client,

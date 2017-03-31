@@ -6,10 +6,6 @@ local database = {}
 
 local strDbSrvName = nil
 
-function database.sendMessage( ... )
-	return skynet.call(strDbSrvName, "lua", "msg", ...)
-end
-
 function database.callConnect(conf)
 	return skynet.call(strDbSrvName, "lua", "connect", conf)
 end

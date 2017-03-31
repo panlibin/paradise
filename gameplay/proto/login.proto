@@ -3,26 +3,14 @@
 	session 1 : integer
 }
 
-handshake 1 {
-	response {
-		msg 0  : string
-	}
-}
-
-get 2 {
+MsgLoginReq 1 {
 	request {
-		what 0 : string
-	}
-	response {
-		result 0 : string
+		account 0  : string
 	}
 }
 
-set 3 {
+MsgLoginRet 2 {
 	request {
-		what 0 : string
-		value 1 : string
+		errno 0 : integer
 	}
 }
-
-quit 4 {}
