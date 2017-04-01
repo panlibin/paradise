@@ -60,6 +60,7 @@ end
 function Player:login(strAccount, fd, ip, nEncodeIdx, nDecodeIdx)
 	self.strAccount = strAccount
 	self.session:init(fd, ip, GAMEPLAY_PROTOCOL_INDEX, nEncodeIdx, nDecodeIdx)
+	self:sendMessage("MsgCharacterListSyn", self.charactermanager:getCharacterSnapshotList())
 end
 
 function Player:logout()

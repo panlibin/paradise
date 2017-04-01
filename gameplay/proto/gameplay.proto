@@ -1,11 +1,11 @@
 .package {
 	type 0 : integer
-	session 1 : integer
 }
 
 MsgLoginReq 1 {
 	request {
-		account 0  : string
+		account 0 : string
+		sign 1 : string
 	}
 }
 
@@ -15,15 +15,23 @@ MsgLoginRet 2 {
 	}
 }
 
+.CharacterSnapshot {
+	characterId 0 : integer
+	name 1 : string
+	class 2 : integer
+	sex 3 : integer
+	level 4 : integer
+}
+
 MsgCharacterListSyn 3 {
 	request {
-		account 0  : integer
+		characterList 0 : *CharacterSnapshot
 	}
 }
 
 MsgEnterWorldReq 4 {
 	request {
-		errno 0 : integer
+		characterId 0 : integer
 	}
 }
 

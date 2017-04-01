@@ -28,8 +28,8 @@ function CharacterManager:unloadCharacter()
 	-- body
 end
 
-function CharacterManager:getCharacterList()
-	-- body
+function CharacterManager:getCharacterSnapshotList()
+	return {}
 end
 
 return CharacterManager
